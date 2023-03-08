@@ -74,6 +74,11 @@ export default class extends Controller {
     getNostr()
       .signEvent(buildNote(this))
       .then((note: NostrEvent) => sendNote(this.relayTarget.value, note))
+      .then(() => {
+        if (window.confirm("Note sent successfully! Reset form?")) {
+          window.open("/");
+        }
+      })
       .catch((err) => window.alert(err));
   }
 }
