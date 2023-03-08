@@ -45,14 +45,14 @@ export default class extends Controller {
 
   cacheNotes(e: Event) {
     e.preventDefault();
-    nostr
+    getNostr()
       .getPublicKey()
       .then((pubkey) => fetchNotes(pubkey, this.relayTarget.value))
       .then((events: NostrEvent[]) => {
         toOptions(events, this.dTagsTarget);
         this.dTagTarget.placeholder = "Select or input new.";
       })
-      .catch((err) => console.log(err));
+      .catch((err) => window.alert(err));
   }
 
   loadNote() {
@@ -71,12 +71,10 @@ export default class extends Controller {
 
   publishNote(e: Event) {
     e.preventDefault();
-    nostr
+    getNostr()
       .signEvent(buildNote(this))
-      .then((note: NostrEvent) => {
-        sendNote(this.relayTarget.value, note);
-      })
-      .catch((err) => console.log(err));
+      .then((note: NostrEvent) => sendNote(this.relayTarget.value, note))
+      .catch((err) => window.alert(err));
   }
 }
 
@@ -158,7 +156,7 @@ const relayConnect = async (relayURL: string): Promise<Relay> => {
     console.log(`connected to ${relay.url}`);
   });
   relay.on("error", () => {
-    console.log(`failed to connect to ${relay.url}`);
+    throw `failed to connect to ${relay.url}`;
   });
   await relay.connect();
   return relay;
@@ -178,8 +176,7 @@ const sendNote = async (relayURL: string, note: NostrEvent) => {
     finish();
   });
   pub.on("failed", (reason) => {
-    console.log(`failed to publish to ${relay.url}: ${reason}`);
-    finish();
+    throw `failed to publish to ${relay.url}: ${reason}`;
   });
 
   await done;
@@ -215,4 +212,20 @@ const fetchNotes = async (
 
   await done;
   return notes;
+};
+
+interface Nostr {
+  getPublicKey(): Promise<string>;
+  signEvent(event: EventTemplate): Promise<NostrEvent>;
+}
+
+const getNostr = (): Nostr => {
+  if (typeof window === "undefined") {
+    throw "missing window object";
+  }
+  if (typeof window["nostr"] === "undefined") {
+    throw "missing nostr object";
+  }
+
+  return window["nostr"];
 };
