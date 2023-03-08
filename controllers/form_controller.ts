@@ -45,8 +45,8 @@ export default class extends Controller {
 
   cacheNotes(e: Event) {
     e.preventDefault();
-    getNostr()
-      .getPublicKey()
+    getNostrPromise()
+      .then((nos: Nostr) => nos.getPublicKey())
       .then((pubkey) => fetchNotes(pubkey, this.relayTarget.value))
       .then((events: NostrEvent[]) => {
         toOptions(events, this.dTagsTarget);
@@ -71,8 +71,8 @@ export default class extends Controller {
 
   publishNote(e: Event) {
     e.preventDefault();
-    getNostr()
-      .signEvent(buildNote(this))
+    getNostrPromise()
+      .then((nos) => nos.signEvent(buildNote(this)))
       .then((note: NostrEvent) => sendNote(this.relayTarget.value, note))
       .then(() => {
         if (window.confirm("Note sent successfully! Reset form?")) {
@@ -224,12 +224,16 @@ interface Nostr {
   signEvent(event: EventTemplate): Promise<NostrEvent>;
 }
 
+const getNostrPromise = (): Promise<Nostr> => {
+  return new Promise(getNostr);
+};
+
 const getNostr = (): Nostr => {
   if (typeof window === "undefined") {
     throw "missing window object";
   }
   if (typeof window["nostr"] === "undefined") {
-    throw "missing nostr object";
+    throw "Missing Nostr plugin, please install! (E.g. https://getalby.com.)";
   }
 
   return window["nostr"];
