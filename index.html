@@ -9,7 +9,51 @@
     <link rel="stylesheet" href="build/application.css" />
   </head>
   <body>
-    <h1 class="text-lg font-semibold">longpub</h1>
-    <form data-controller="form"></form>
+    <form
+      class="p-4"
+      data-controller="form"
+      data-action="submit->form#publishNote"
+    >
+      <h1 class="text-lg font-semibold">longpub</h1>
+      <label for="d-tag" class="block">d tag:</label>
+      <input
+        id="d-tag"
+        data-form-target="dTag"
+        list="d-tags"
+        type="text"
+        autocomplete="off"
+        data-action="change->form#loadNote"
+        required
+      />
+      <datalist id="d-tags" data-form-target="dTags"></datalist>
+      <label for="title" class="block">Title:</label>
+      <input id="title" data-form-target="title" type="text" />
+      <label for="published_at" class="block">Published at:</label>
+      <input
+        id="published_at"
+        data-form-target="publishedAt"
+        type="datetime-local"
+        step="1"
+      />
+      <label for="image" class="block">Image URL:</label>
+      <input id="image" data-form-target="image" type="url" />
+      <label for="t-tags" class="block">Tags (comma separated):</label>
+      <input id="t-tags" data-form-target="tTags" type="text" />
+      <label for="summary" class="block">Summary:</label>
+      <textarea
+        id="summary"
+        data-form-target="summary"
+        cols="30"
+        rows="5"
+      ></textarea>
+      <label for="content" class="block">Content:</label>
+      <textarea
+        id="content"
+        data-form-target="content"
+        cols="30"
+        rows="10"
+      ></textarea>
+      <input type="submit" class="block border border-black p-2" />
+    </form>
   </body>
 </html>
