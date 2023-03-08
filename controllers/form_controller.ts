@@ -12,11 +12,16 @@ import {
   toUnixTimestamp,
 } from "./time_helpers";
 
+const client = "longpub";
+
+const notesCache: { [dTag: string]: NostrEvent } = {};
+
 // Connects to data-controller="form"
 export default class extends Controller {
   static values = {};
   static targets = [
     "dTags",
+    "relay",
     "dTag",
     "title",
     "publishedAt",
@@ -27,6 +32,7 @@ export default class extends Controller {
   ];
 
   dTagsTarget: HTMLDataListElement;
+  relayTarget: HTMLInputElement;
   dTagTarget: HTMLInputElement;
   titleTarget: HTMLInputElement;
   publishedAtTarget: HTMLInputElement;
@@ -35,16 +41,23 @@ export default class extends Controller {
   summaryTarget: HTMLTextAreaElement;
   contentTarget: HTMLTextAreaElement;
 
-  connect() {
-    fetchNotes(pubkey, relay).then((events: NostrEvent[]) =>
-      toOptions(events, this.dTagsTarget)
-    );
+  connect() {}
+
+  cacheNotes(e: Event) {
+    e.preventDefault();
+    nostr
+      .getPublicKey()
+      .then((pubkey) => fetchNotes(pubkey, this.relayTarget.value))
+      .then((events: NostrEvent[]) => {
+        toOptions(events, this.dTagsTarget);
+        this.dTagTarget.placeholder = "Select or input new.";
+      })
+      .catch((err) => console.log(err));
   }
 
   loadNote() {
     const note = notesCache[this.dTagTarget.value];
     if (!note) return;
-    console.log(note);
 
     this.titleTarget.value = tagValue(note, "title");
     this.publishedAtTarget.value = toDatetimeLocalStep1(
@@ -61,7 +74,7 @@ export default class extends Controller {
     nostr
       .signEvent(buildNote(this))
       .then((note: NostrEvent) => {
-        sendNote(relay, note);
+        sendNote(this.relayTarget.value, note);
       })
       .catch((err) => console.log(err));
   }
@@ -122,15 +135,6 @@ const buildNote = (inputs: NoteInputs): EventTemplate => {
 
   return note;
 };
-
-const client = "longpub";
-
-const pubkey =
-  "8071afec6d98299978ef26dc6a87f62b0c0f3eab66047b5dbe46e83c29a6a391";
-
-const relay = "wss://nostr-pub.wellorder.net";
-
-const notesCache: { [dTag: string]: NostrEvent } = {};
 
 const toOptions = (notes: NostrEvent[], list: HTMLDataListElement) => {
   notes.map((note) => {

@@ -15,6 +15,13 @@
       data-action="submit->form#publishNote"
     >
       <h1 class="text-lg font-semibold">longpub</h1>
+      <label for="relay" class="block">Relay:</label>
+      <input
+        id="relay"
+        data-form-target="relay"
+        type="text"
+        value="wss://nostr-pub.wellorder.net"
+      />
       <label for="d-tag" class="block">d tag:</label>
       <input
         id="d-tag"
@@ -24,6 +31,12 @@
         autocomplete="off"
         data-action="change->form#loadNote"
         required
+      />
+      <input
+        type="button"
+        value="load notes"
+        data-action="click->form#cacheNotes"
+        class="border border-black p-2"
       />
       <datalist id="d-tags" data-form-target="dTags"></datalist>
       <label for="title" class="block">Title:</label>
