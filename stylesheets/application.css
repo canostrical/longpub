@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+input {
+    @apply w-36;
+}
+
+textarea, input[type=text], input[type=url], input[type=datetime-local]  {
+    @apply w-72;
+}
+
+input, textarea {
+    @apply mb-1.5;
+}
+
+input[type=button], input[type=submit] {
+    @apply border border-black p-2 cursor-pointer bg-blue-50;
+}

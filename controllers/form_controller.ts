@@ -45,14 +45,22 @@ export default class extends Controller {
 
   cacheNotes(e: Event) {
     e.preventDefault();
+    this.dTagTarget.placeholder = "Loading…";
     getNostrPromise()
       .then((nos: Nostr) => nos.getPublicKey())
       .then((pubkey) => fetchNotes(pubkey, this.relayTarget.value))
       .then((events: NostrEvent[]) => {
+        if (events.length == 0) {
+          this.dTagTarget.placeholder = "No notes found. Be creative!";
+          return;
+        }
         toOptions(events, this.dTagsTarget);
         this.dTagTarget.placeholder = "Select or input new.";
       })
-      .catch((err) => window.alert(err));
+      .catch((err) => {
+        window.alert(err);
+        this.dTagTarget.placeholder = "No notes due to error. Be creative!";
+      });
   }
 
   loadNote() {
@@ -225,7 +233,9 @@ interface Nostr {
 }
 
 const getNostrPromise = (): Promise<Nostr> => {
-  return new Promise(getNostr);
+  return new Promise((resolve) => {
+    resolve(getNostr());
+  });
 };
 
 const getNostr = (): Nostr => {
@@ -233,7 +243,7 @@ const getNostr = (): Nostr => {
     throw "missing window object";
   }
   if (typeof window["nostr"] === "undefined") {
-    throw "Missing Nostr plugin, please install! (E.g. https://getalby.com.)";
+    throw "Missing Nostr plugin, please install! (e.g. https://getalby.com)";
   }
 
   return window["nostr"];
