@@ -14,7 +14,7 @@
       data-controller="form"
       data-action="submit->form#publishNote"
     >
-      <fieldset class="flex flex-col" data-form-target="hideGroup">
+      <fieldset class="flex flex-col" data-form-target="metaGroup">
         <div class="mb-1.5">
           <h1 class="text-lg font-semibold inline-block">longpub</h1>
           <a class="text-blue-400" href="https://github.com/canostrical/longpub"
@@ -80,7 +80,7 @@
           data-action="input->form#storeContent"
           rows="10"
         ></textarea>
-        <div>
+        <fieldset data-form-target="actionGroup">
           <input type="submit" class="bg-blue-50" />
           <input
             type="reset"

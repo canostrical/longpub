@@ -31,7 +31,8 @@ export default class extends Controller {
     "tTags",
     "summary",
     "content",
-    "hideGroup",
+    "metaGroup",
+    "actionGroup",
   ];
 
   dTagsTarget: HTMLDataListElement;
@@ -43,7 +44,8 @@ export default class extends Controller {
   tTagsTarget: HTMLInputElement;
   summaryTarget: HTMLTextAreaElement;
   contentTarget: HTMLTextAreaElement;
-  hideGroupTarget: HTMLFieldSetElement;
+  metaGroupTarget: HTMLFieldSetElement;
+  actionGroupTarget: HTMLFieldSetElement;
 
   connect() {
     this.loadContent();
@@ -140,13 +142,14 @@ export default class extends Controller {
   }
 
   clearStorage() {
-    if (window.confirm("Clear storage?")) {
+    if (window.confirm("Reset form and lose unsaved data?")) {
       localStorage.clear();
     }
   }
 
   focus() {
-    this.hideGroupTarget.classList.toggle("hidden");
+    this.metaGroupTarget.classList.toggle("hidden");
+    this.actionGroupTarget.classList.toggle("hidden");
     this.contentTarget.classList.toggle("h-96");
     this.contentTarget.classList.toggle("w-11/12");
     this.contentTarget.classList.toggle("lg:w-2/3");
