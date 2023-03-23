@@ -1,11 +1,11 @@
 import { Controller } from "@hotwired/stimulus";
+import { Kind, Event as NostrEvent, EventTemplate } from "nostr-tools";
 import {
-  relayInit,
-  Kind,
-  Relay,
-  Event as NostrEvent,
-  EventTemplate,
-} from "nostr-tools";
+  fetchEventsWithTimeout,
+  newestEvent,
+  publishEventWithTimeout,
+  uniqueEvents,
+} from "./nostr_helpers";
 import {
   fromDatetimeLocal,
   toDatetimeLocalStep1,
@@ -16,12 +16,14 @@ const client = "longpub";
 
 const notesCache: { [dTag: string]: NostrEvent } = {};
 
+const timeout = 4000;
+
 // Connects to data-controller="form"
 export default class extends Controller {
   static values = {};
   static targets = [
     "dTags",
-    "relay",
+    "relays",
     "dTag",
     "title",
     "publishedAt",
@@ -29,10 +31,11 @@ export default class extends Controller {
     "tTags",
     "summary",
     "content",
+    "hideGroup",
   ];
 
   dTagsTarget: HTMLDataListElement;
-  relayTarget: HTMLInputElement;
+  relaysTarget: HTMLTextAreaElement;
   dTagTarget: HTMLInputElement;
   titleTarget: HTMLInputElement;
   publishedAtTarget: HTMLInputElement;
@@ -40,15 +43,52 @@ export default class extends Controller {
   tTagsTarget: HTMLInputElement;
   summaryTarget: HTMLTextAreaElement;
   contentTarget: HTMLTextAreaElement;
+  hideGroupTarget: HTMLFieldSetElement;
 
-  connect() {}
+  connect() {
+    this.loadContent();
+  }
+
+  readRelays(): string[] {
+    const urls: string[] = this.relaysTarget.value
+      .split("\n")
+      .filter((str) => str.trim() !== "")
+      .map((str) => (str.includes("://") ? str : `wss://${str}`));
+
+    if (urls.length === 0) urls.push("wss://nostr-pub.wellorder.net");
+    return urls;
+  }
+
+  fetchRelays(e: Event) {
+    e.preventDefault();
+    this.relaysTarget.value = "";
+    this.relaysTarget.placeholder = "Loading…";
+    getNostrPromise()
+      .then((nos: Nostr) => nos.getPublicKey())
+      .then((pubkey) => fetchRelaysAny(pubkey, this.readRelays()))
+      .then((event: NostrEvent | null) => {
+        if (!event) {
+          this.relaysTarget.placeholder =
+            "No relays found. Add at least one of your own, and try again!";
+          return;
+        }
+
+        this.relaysTarget.value = firstValuePerMatchingTag(event, "r").join(
+          "\n"
+        );
+      })
+      .catch((err) => {
+        window.alert(err);
+        this.relaysTarget.placeholder = "No relays due to error. Add your own!";
+      });
+  }
 
   cacheNotes(e: Event) {
     e.preventDefault();
     this.dTagTarget.placeholder = "Loading…";
     getNostrPromise()
       .then((nos: Nostr) => nos.getPublicKey())
-      .then((pubkey) => fetchNotes(pubkey, this.relayTarget.value))
+      .then((pubkey) => fetchNotesAll(pubkey, this.readRelays()))
       .then((events: NostrEvent[]) => {
         if (events.length == 0) {
           this.dTagTarget.placeholder = "No notes found. Be creative!";
@@ -67,13 +107,14 @@ export default class extends Controller {
     const note = notesCache[this.dTagTarget.value];
     if (!note) return;
 
-    this.titleTarget.value = tagValue(note, "title");
-    this.publishedAtTarget.value = toDatetimeLocalStep1(
-      tagValue(note, "published_at")
-    );
-    this.imageTarget.value = tagValue(note, "image");
-    this.tTagsTarget.value = tagValues(note, "t").join(", ");
-    this.summaryTarget.value = tagValue(note, "summary");
+    this.titleTarget.value = firstValueOfFirstMatchingTag(note, "title");
+    const publishedAt = firstValueOfFirstMatchingTag(note, "published_at");
+    if (publishedAt !== "") {
+      this.publishedAtTarget.value = toDatetimeLocalStep1(publishedAt);
+    }
+    this.imageTarget.value = firstValueOfFirstMatchingTag(note, "image");
+    this.tTagsTarget.value = firstValuePerMatchingTag(note, "t").join(", ");
+    this.summaryTarget.value = firstValueOfFirstMatchingTag(note, "summary");
     this.contentTarget.value = note.content;
   }
 
@@ -81,7 +122,7 @@ export default class extends Controller {
     e.preventDefault();
     getNostrPromise()
       .then((nos) => nos.signEvent(buildNote(this)))
-      .then((note: NostrEvent) => sendNote(this.relayTarget.value, note))
+      .then((note: NostrEvent) => sendNoteAll(this.readRelays(), note))
       .then(() => {
         if (window.confirm("Note sent successfully! Reset form?")) {
           window.location.reload();
@@ -89,33 +130,68 @@ export default class extends Controller {
       })
       .catch((err) => window.alert(err));
   }
+
+  storeContent() {
+    localStorage.setItem("content", this.contentTarget.value);
+  }
+
+  loadContent() {
+    this.contentTarget.value = localStorage.getItem("content");
+  }
+
+  clearStorage() {
+    if (window.confirm("Clear storage?")) {
+      localStorage.clear();
+    }
+  }
+
+  focus() {
+    this.hideGroupTarget.classList.toggle("hidden");
+    this.contentTarget.classList.toggle("h-96");
+    this.contentTarget.classList.toggle("w-11/12");
+    this.contentTarget.classList.toggle("lg:w-2/3");
+  }
 }
 
-const tagValues = (note: NostrEvent, key: string): string[] => {
+const firstValuePerMatchingTag = (note: NostrEvent, key: string): string[] => {
+  return note.tags.filter(([k]) => k == key).map(([k, v]) => v);
+};
+
+const allValuesOfFirstMatchingTag = (
+  note: NostrEvent,
+  key: string
+): string[] => {
   const values = note.tags.find(([k]) => k == key);
   if (values) return values.slice(1);
   return [];
 };
 
-const tagValue = (note: NostrEvent, key: string): string => {
-  const values = tagValues(note, key);
+const firstValueOfFirstMatchingTag = (
+  note: NostrEvent,
+  key: string
+): string => {
+  const values = allValuesOfFirstMatchingTag(note, key);
   if (values.length > 0) {
     return values[0];
   }
   return "";
 };
 
-interface NoteInputs {
-  dTagTarget: HTMLInputElement;
-  titleTarget: HTMLInputElement;
-  publishedAtTarget: HTMLInputElement;
-  imageTarget: HTMLInputElement;
-  tTagsTarget: HTMLInputElement;
-  summaryTarget: HTMLTextAreaElement;
-  contentTarget: HTMLTextAreaElement;
+interface Valuable {
+  value: string;
 }
 
-const buildNote = (inputs: NoteInputs): EventTemplate => {
+interface NoteInputs {
+  dTagTarget: Valuable;
+  titleTarget: Valuable;
+  publishedAtTarget: Valuable;
+  imageTarget: Valuable;
+  tTagsTarget: Valuable;
+  summaryTarget: Valuable;
+  contentTarget: Valuable;
+}
+
+export const buildNote = (inputs: NoteInputs): EventTemplate => {
   const dTag = inputs.dTagTarget.value.trim();
   const title = inputs.titleTarget.value.trim();
   const publishedAt = inputs.publishedAtTarget.value.trim();
@@ -131,7 +207,7 @@ const buildNote = (inputs: NoteInputs): EventTemplate => {
   if (dTag != "") tags.push(["d", dTag]);
   if (title != "") tags.push(["title", title]);
   if (image != "") tags.push(["image", image]);
-  if (tTags.length > 0) tags.push(["t", ...tTags]);
+  if (tTags.length > 0) tTags.forEach((tTag) => tags.push(["t", tTag]));
   if (publishedAt != "")
     tags.push(["published_at", fromDatetimeLocal(publishedAt).toString()]);
   if (summary != "") tags.push(["summary", summary]);
@@ -163,68 +239,45 @@ const addOption = (list: HTMLDataListElement, dTag: string) => {
   list.appendChild(option);
 };
 
-const relayConnect = async (relayURL: string): Promise<Relay> => {
-  const relay = relayInit(relayURL);
-  relay.on("connect", () => {
-    console.log(`connected to ${relay.url}`);
-  });
-  relay.on("error", () => {
-    throw `failed to connect to ${relay.url}`;
-  });
-  await relay.connect();
-  return relay;
-};
+const sendNoteAll = async (relayURLs: string[], note: NostrEvent) =>
+  await Promise.all(
+    relayURLs.map((url) => publishEventWithTimeout(url, note, timeout))
+  );
 
-const sendNote = async (relayURL: string, note: NostrEvent) => {
-  const relay = await relayConnect(relayURL);
-
-  const pub = relay.publish(note);
-
-  let finish;
-  const done = new Promise((resolve) => {
-    finish = resolve;
-  });
-  pub.on("ok", () => {
-    console.log(`${relay.url} has accepted our event`);
-    finish();
-  });
-  pub.on("failed", (reason) => {
-    throw `failed to publish to ${relay.url}: ${reason}`;
-  });
-
-  await done;
-  relay.close();
-};
-
-const fetchNotes = async (
+const fetchRelaysAny = async (
   pubkey: string,
-  relayURL: string
-): Promise<NostrEvent[]> => {
-  const relay = await relayConnect(relayURL);
+  relayURLs: string[]
+): Promise<NostrEvent | null> => {
+  const filters = [
+    {
+      authors: [pubkey],
+      kinds: [Kind.RelayList],
+    },
+  ];
+  const events = await Promise.any(
+    relayURLs.map((url) =>
+      fetchEventsWithTimeout(url, timeout, timeout, filters)
+    )
+  );
+  return newestEvent(events);
+};
 
-  let sub = relay.sub([
+const fetchNotesAll = async (
+  pubkey: string,
+  relayURLs: string[]
+): Promise<NostrEvent[]> => {
+  const filters = [
     {
       authors: [pubkey],
       kinds: [Kind.Article],
     },
-  ]);
-  const notes: NostrEvent[] = [];
-  sub.on("event", (note: NostrEvent) => {
-    notes.push(note);
-  });
-
-  let finish;
-  const done = new Promise((resolve) => {
-    finish = resolve;
-  });
-  sub.on("eose", () => {
-    sub.unsub();
-    relay.close();
-    finish();
-  });
-
-  await done;
-  return notes;
+  ];
+  const notes = await Promise.all(
+    relayURLs.map((url) =>
+      fetchEventsWithTimeout(url, timeout, timeout, filters)
+    )
+  );
+  return uniqueEvents(notes);
 };
 
 interface Nostr {

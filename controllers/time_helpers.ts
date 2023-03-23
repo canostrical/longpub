@@ -16,16 +16,3 @@ export const toDatetimeLocalStep1 = (timestamp: string): string => {
 export const fromDatetimeLocal = (local: string): number => {
   return toUnixTimestamp(Date.parse(local));
 };
-
-export const timeHelpersTest = () => {
-  const input: HTMLInputElement = document.createElement("input");
-  input.type = "datetime-local";
-  input.step = "1";
-  const t = Date.now();
-  const ts = toUnixTimestamp(t).toString();
-  input.value = toDatetimeLocalStep1(ts);
-  const ts2 = fromDatetimeLocal(input.value);
-  if (Number(ts) !== ts2) {
-    console.warn(`timestamp inconsistency: ${ts} ${ts2}`);
-  }
-};

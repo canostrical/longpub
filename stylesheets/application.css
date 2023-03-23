@@ -14,6 +14,6 @@ input, textarea {
     @apply mb-1.5;
 }
 
-input[type=button], input[type=submit] {
-    @apply border border-black p-2 cursor-pointer bg-blue-50;
+input[type=button], input[type=submit], input[type=reset] {
+    @apply border border-black p-2 cursor-pointer;
 }

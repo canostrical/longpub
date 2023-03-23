@@ -14,53 +14,81 @@
       data-controller="form"
       data-action="submit->form#publishNote"
     >
-      <div class="mb-1.5">
-        <h1 class="text-lg font-semibold inline-block">longpub</h1>
-        <a class="text-blue-400" href="https://github.com/canostrical/longpub"
-          >sourcecode</a
-        >
-      </div>
-      <label for="relay">Relay:</label>
-      <input
-        id="relay"
-        data-form-target="relay"
-        type="text"
-        value="wss://nostr-pub.wellorder.net"
-      />
-      <label for="d-tag">d tag:</label>
-      <input
-        id="d-tag"
-        data-form-target="dTag"
-        list="d-tags"
-        type="text"
-        autocomplete="off"
-        data-action="change->form#loadNote"
-        required
-      />
-      <input
-        type="button"
-        value="Load notes"
-        data-action="click->form#cacheNotes"
-      />
-      <datalist id="d-tags" data-form-target="dTags"></datalist>
-      <label for="title">Title:</label>
-      <input id="title" data-form-target="title" type="text" />
-      <label for="published_at">Published at:</label>
-      <input
-        id="published_at"
-        data-form-target="publishedAt"
-        type="datetime-local"
-        step="1"
-      />
-      <label for="image">Image URL:</label>
-      <input id="image" data-form-target="image" type="url" />
-      <label for="t-tags">Tags (comma separated):</label>
-      <input id="t-tags" data-form-target="tTags" type="text" />
-      <label for="summary">Summary:</label>
-      <textarea id="summary" data-form-target="summary" rows="5"></textarea>
-      <label for="content">Content:</label>
-      <textarea id="content" data-form-target="content" rows="10"></textarea>
-      <input type="submit" />
+      <fieldset class="flex flex-col" data-form-target="hideGroup">
+        <div class="mb-1.5">
+          <h1 class="text-lg font-semibold inline-block">longpub</h1>
+          <a class="text-blue-400" href="https://github.com/canostrical/longpub"
+            >sourcecode</a
+          >
+        </div>
+        <label for="relays">Relays (one per line):</label>
+        <textarea
+          id="relays"
+          data-form-target="relays"
+          type="text"
+          placeholder="wss://nostr-pub.wellorder.net"
+        ></textarea>
+        <input
+          type="button"
+          value="Load relays"
+          data-action="click->form#fetchRelays"
+        />
+        <label for="d-tag">d tag:</label>
+        <input
+          id="d-tag"
+          data-form-target="dTag"
+          list="d-tags"
+          type="text"
+          autocomplete="off"
+          data-action="change->form#loadNote"
+          required
+        />
+        <input
+          type="button"
+          value="Load notes"
+          data-action="click->form#cacheNotes"
+        />
+        <datalist id="d-tags" data-form-target="dTags"></datalist>
+        <label for="title">Title:</label>
+        <input id="title" data-form-target="title" type="text" />
+        <label for="published_at">Published at:</label>
+        <input
+          id="published_at"
+          data-form-target="publishedAt"
+          type="datetime-local"
+          step="1"
+        />
+        <label for="image">Image URL:</label>
+        <input id="image" data-form-target="image" type="url" />
+        <label for="t-tags">Tags (comma separated):</label>
+        <input id="t-tags" data-form-target="tTags" type="text" />
+        <label for="summary">Summary:</label>
+        <textarea id="summary" data-form-target="summary" rows="5"></textarea>
+      </fieldset>
+      <fieldset class="flex flex-col">
+        <div>
+          <label for="content">Content:</label>
+          <a
+            class="text-blue-400 cursor-pointer"
+            data-action="click->form#focus"
+            >focus</a
+          >
+        </div>
+        <textarea
+          id="content"
+          data-form-target="content"
+          data-action="input->form#storeContent"
+          rows="10"
+        ></textarea>
+        <div>
+          <input type="submit" class="bg-blue-50" />
+          <input
+            type="reset"
+            data-action="click->form#clearStorage"
+            class="text-red-500"
+          />
+        </div>
+      </fieldset>
     </form>
   </body>
 </html>
