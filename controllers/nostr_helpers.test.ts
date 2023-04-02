@@ -2,7 +2,7 @@ import { TextEncoder, TextDecoder } from "util";
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-import { Event, validateEvent, verifySignature } from "nostr-tools";
+import { Event } from "nostr-tools";
 import { buildNote } from "./form_controller";
 import {
   fetchEventsWithTimeout,

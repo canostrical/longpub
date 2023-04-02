@@ -128,6 +128,7 @@ export default class extends Controller {
       .then(() => {
         if (window.confirm("Note sent successfully! Reset form?")) {
           window.location.reload();
+          localStorage.clear();
         }
       })
       .catch((err) => window.alert(err));
