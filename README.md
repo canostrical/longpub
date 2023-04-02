@@ -4,4 +4,4 @@
 
 Built by @jraedisch - npub1hz404lnj7lxsdt5vxdlex9rlvhlz6dxqqed4y6tpywvzgwx0qmlqfpl6sm
 
-More info coming soon here, or [here](https://blogstack.io/naddr1qqrkcmmwvac82cspr4mhxue69uhkummnw3ez6ur4vgh8wetvd3hhyer9wghxuet5qgst32h6lee00ngx46xrxlunz3lktl3dxnqqvk6jd9sj8xpy8r8sdlsrqsqqqa282ucjk0).
+More info coming soon here, or [here](https://habla.news/a/naddr1qqrkcmmwvac82cspz4mhxue69uhhyetvv9ujuerpd46hxtnfduhszrnhwden5te0dehhxtnvdakz7q3qhz404lnj7lxsdt5vxdlex9rlvhlz6dxqqed4y6tpywvzgwx0qmlqxpqqqp65wkt4rey).
